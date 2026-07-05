@@ -7,7 +7,6 @@ export const PROBLEMS: Problem[] = [
     difficulty: "Easy",
     statement:
       "Read two integers a and b from standard input (space-separated) and print their sum.",
-    languageId: 54,
     starterCode:
       "#include <iostream>\nusing namespace std;\nint main(){\n    long long a,b;\n    cin >> a >> b;\n    // your code here\n    return 0;\n}\n",
     tests: [

@@ -1,19 +1,19 @@
 # 1v1 C++ Arena
 
 Real-time algorithmic duel platform. Two players queue, get matched into a live
-duel, race to solve a problem, and the first to pass all Judge0 test cases wins —
+duel, race to solve a problem, and the first to pass all test cases wins —
 Elo is adjusted server-side by an authoritative serverless validator.
 
 ## Stack
 
 React + Vite + TypeScript · Tailwind (light theme) · Zustand · Firebase
-(Auth / Firestore / Realtime DB) · Vercel serverless (`/api`) · Judge0 via
-RapidAPI · Monaco editor.
+(Auth / Firestore / Realtime DB) · Vercel serverless (`/api`) · Piston execution
+API · Monaco editor.
 
 ## Architecture
 
 - `src/lib/matchmaking.ts` — single-slot atomic RTDB queue with inbox handoff.
-- `src/lib/judge0.ts` — runs each test case, compares stdout.
+- `src/lib/executor.ts` — runs each test case on the free Piston API, compares stdout.
 - `src/lib/finalize.ts` — calls the same-origin `/api/finalizeMatch` with the
   user's Firebase ID token.
 - `api/finalizeMatch.ts` — Vercel serverless validator: verifies the token,
@@ -25,8 +25,9 @@ RapidAPI · Monaco editor.
 
 - Node 18+ and npm
 - A Firebase project (Spark / free plan)
-- A RapidAPI account subscribed to **Judge0 CE** (free tier)
 - A Vercel account (free Hobby plan) — for local `vercel dev` and deploy
+
+Code execution uses the public **Piston API** (emkc.org) — no account or key.
 
 ---
 
@@ -34,7 +35,7 @@ RapidAPI · Monaco editor.
 
 ```bash
 npm install
-cp .env.local.example .env.local   # fill in the VITE_* + RapidAPI keys
+cp .env.local.example .env.local   # fill in the VITE_* Firebase keys
 ```
 
 Two ways to run:
@@ -100,7 +101,6 @@ key**. From the downloaded JSON you need `project_id`, `client_email`, and
    VITE_FIREBASE_STORAGE_BUCKET
    VITE_FIREBASE_MESSAGING_SENDER_ID
    VITE_FIREBASE_APP_ID
-   VITE_RAPIDAPI_KEY
    ```
    **Server (from the service-account JSON):**
    ```
@@ -114,7 +114,7 @@ key**. From the downloaded JSON you need `project_id`, `client_email`, and
 4. In Firebase → Authentication → **Settings → Authorized domains**, add your
    Vercel domain (e.g. `your-app.vercel.app`) so Google sign-in works.
 
-Judge0 runs on the RapidAPI free tier (~50 requests/day).
+Code execution uses the free public Piston API — nothing to configure.
 
 ---
 
@@ -123,7 +123,6 @@ Judge0 runs on the RapidAPI free tier (~50 requests/day).
 - [ ] `npm install`
 - [ ] Create the Firebase project + enable Auth (Email + Google), Firestore, RTDB
 - [ ] Fill `.env.local` with the `VITE_*` values
-- [ ] Subscribe to Judge0 CE on RapidAPI, add `VITE_RAPIDAPI_KEY`
 - [ ] `firebase deploy --only firestore:rules,database` to publish the rules
 - [ ] Generate the service-account key for the server env vars
 - [ ] Add all env vars in Vercel (frontend + server)

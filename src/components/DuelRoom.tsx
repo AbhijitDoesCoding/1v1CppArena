@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDuelStore } from "../store/useDuelStore";
 import { subscribeMatch, pushProgress } from "../lib/matchmaking";
-import { runAllTests } from "../lib/judge0";
+import { runAllTests } from "../lib/executor";
 import { finalizeMatch } from "../lib/finalize";
 import { getProblem } from "../data/problems";
 import ProblemPanel from "./ProblemPanel";

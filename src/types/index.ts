@@ -10,7 +10,6 @@ export interface Problem {
   difficulty: "Easy" | "Medium" | "Hard";
   statement: string;
   starterCode: string;
-  languageId: number; // Judge0 language id (54 = C++ GCC 9)
   tests: { stdin: string; expected: string }[];
 }
 
