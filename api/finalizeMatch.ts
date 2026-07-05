@@ -1,9 +1,5 @@
-import * as functions from "firebase-functions/v1";
-import * as admin from "firebase-admin";
-
-admin.initializeApp();
-const rtdb = admin.database();
-const db = admin.firestore();
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { initFirebaseAdmin } from "./_admin";
 
 function computeElo(winner: number, loser: number, k = 32): [number, number] {
   const expW = 1 / (1 + 10 ** ((loser - winner) / 400));
@@ -11,16 +7,33 @@ function computeElo(winner: number, loser: number, k = 32): [number, number] {
   return [Math.round(winner + k * (1 - expW)), Math.round(loser + k * (0 - expL))];
 }
 
-export const finalizeMatch = functions.https.onCall(async (data, context) => {
-  const uid = context.auth?.uid;
-  if (!uid) throw new functions.https.HttpsError("unauthenticated", "Sign in required.");
-  const matchId = data?.matchId;
-  if (!matchId) throw new functions.https.HttpsError("invalid-argument", "matchId required.");
+// Authoritative validator: verifies the caller's Firebase ID token, atomically
+// claims the win (first-writer-wins), then adjusts both players' Elo. Runs on
+// Vercel's free tier — no Firebase Blaze billing required.
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+
+  const { admin, rtdb, db } = initFirebaseAdmin();
+
+  // Verify identity from the Authorization: Bearer <idToken> header.
+  const header = req.headers.authorization ?? "";
+  const idToken = header.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!idToken) return res.status(401).json({ error: "Missing token" });
+
+  let uid: string;
+  try {
+    uid = (await admin.auth().verifyIdToken(idToken)).uid;
+  } catch {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+
+  const matchId = req.body?.matchId;
+  if (!matchId) return res.status(400).json({ error: "matchId required" });
 
   const matchRef = rtdb.ref(`matches/${matchId}`);
 
   // Atomically claim the win. Only succeeds if the match is still active.
-  const tx = await matchRef.transaction((match) => {
+  const tx = await matchRef.transaction((match: any) => {
     if (!match || match.status !== "active") return; // abort
     if (!match.players?.[uid]) return; // not a participant
     match.status = "finished";
@@ -30,7 +43,7 @@ export const finalizeMatch = functions.https.onCall(async (data, context) => {
   });
 
   if (!tx.committed || tx.snapshot.val()?.winner !== uid) {
-    return { won: false }; // someone else already won, or invalid
+    return res.status(200).json({ won: false });
   }
 
   const match = tx.snapshot.val();
@@ -48,5 +61,5 @@ export const finalizeMatch = functions.https.onCall(async (data, context) => {
     t.update(loseRef, { elo: nl });
   });
 
-  return { won: true };
-});
+  return res.status(200).json({ won: true });
+}

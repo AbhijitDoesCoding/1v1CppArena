@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { httpsCallable } from "firebase/functions";
-import { functions } from "../lib/firebase";
 import { useDuelStore } from "../store/useDuelStore";
 import { subscribeMatch, pushProgress } from "../lib/matchmaking";
 import { runAllTests } from "../lib/judge0";
+import { finalizeMatch } from "../lib/finalize";
 import { getProblem } from "../data/problems";
 import ProblemPanel from "./ProblemPanel";
 import EditorPanel from "./EditorPanel";
 import OpponentStatus from "./OpponentStatus";
-
-const finalizeMatch = httpsCallable(functions, "finalizeMatch");
 
 export default function DuelRoom() {
   const { matchId, match, profile, setMatch, reset } = useDuelStore();
@@ -44,8 +41,8 @@ export default function DuelRoom() {
     setLog(result.log);
     if (result.allPassed) {
       try {
-        const res: any = await finalizeMatch({ matchId: match!.id });
-        setLog(res.data?.won ? "🏆 You won! Elo updated." : "Match already finished.");
+        const data = await finalizeMatch(match!.id);
+        setLog(data.won ? "🏆 You won! Elo updated." : "Match already finished.");
       } catch (e: any) {
         setLog("Validation error: " + e.message);
       }
