@@ -11,6 +11,12 @@ export async function finalizeMatch(matchId: string): Promise<{ won: boolean }> 
     body: JSON.stringify({ matchId }),
   });
 
+  // In `npm run dev` (Vite alone) there is no /api handler — the SPA fallback
+  // returns index.html. Detect that and give a clear hint instead of a JSON crash.
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("API not available — run `vercel dev` (or deploy) to enable win validation");
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error ?? `finalize failed (${res.status})`);
