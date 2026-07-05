@@ -1,0 +1,29 @@
+{
+  "rules": {
+    "queue": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "inbox": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "auth != null"
+      }
+    },
+    "matches": {
+      "$mid": {
+        ".read": "auth != null",
+        ".write": "auth != null && data.child('players').child(auth.uid).exists()",
+        "players": {
+          "$uid": {
+            "progress": {
+              ".write": "$uid === auth.uid"
+            }
+          }
+        },
+        "status": { ".write": false },
+        "winner": { ".write": false }
+      }
+    }
+  }
+}
