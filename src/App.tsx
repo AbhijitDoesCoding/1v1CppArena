@@ -13,7 +13,11 @@ export default function App() {
   useEffect(() => {
     return onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const p = await ensureProfile(user.uid, user.displayName ?? user.email!.split("@")[0]);
+        const p = await ensureProfile(
+          user.uid,
+          user.displayName ?? user.email!.split("@")[0],
+          user.email
+        );
         setProfile(p);
       } else {
         setProfile(null);

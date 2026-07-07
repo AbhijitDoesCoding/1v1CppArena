@@ -1,7 +1,9 @@
 import { auth } from "./firebase";
 
 // Calls the same-origin Vercel serverless validator with the user's ID token.
-export async function finalizeMatch(matchId: string): Promise<{ won: boolean }> {
+export async function finalizeMatch(
+  matchId: string
+): Promise<{ won: boolean; ranked?: boolean }> {
   const token = await auth.currentUser?.getIdToken();
   if (!token) throw new Error("Not authenticated");
 

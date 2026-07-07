@@ -10,12 +10,34 @@ import type { UserProfile } from "../types";
 
 const STARTING_ELO = 1000;
 
-// Create a Firestore profile on first login; return it either way.
-export async function ensureProfile(uid: string, name: string): Promise<UserProfile> {
+// Create a Firestore profile on first login; return it either way. The email
+// is stored (lowercased) so players can be found for private-match invites.
+export async function ensureProfile(
+  uid: string,
+  name: string,
+  email: string | null
+): Promise<UserProfile> {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
-  if (snap.exists()) return snap.data() as UserProfile;
+  const lowerEmail = email?.trim().toLowerCase();
+
+  if (snap.exists()) {
+    const existing = snap.data() as UserProfile;
+    // Backfill email for accounts created before invites existed.
+    if (lowerEmail && !existing.email) {
+      try {
+        await setDoc(ref, { email: lowerEmail }, { merge: true });
+        return { ...existing, email: lowerEmail };
+      } catch {
+        // Rules may reject the update; never block login over a backfill.
+        return existing;
+      }
+    }
+    return existing;
+  }
+
   const profile: UserProfile = { uid, displayName: name, elo: STARTING_ELO };
+  if (lowerEmail) profile.email = lowerEmail;
   await setDoc(ref, profile);
   return profile;
 }

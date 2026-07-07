@@ -1,7 +1,7 @@
 import { ref, runTransaction, set, get, onValue, off } from "firebase/database";
 import { rtdb } from "./firebase";
-import { PROBLEMS } from "../data/problems";
-import type { UserProfile, Match, PlayerState } from "../types";
+import { buildMatch } from "./match";
+import type { UserProfile, Match } from "../types";
 
 interface QueueSlot {
   uid: string;
@@ -28,27 +28,15 @@ export async function joinQueue(
   });
 
   if (opponent) {
-    // We are the matchmaker: build the match in RTDB.
+    // We are the matchmaker: build the ranked match in RTDB.
     const opp = opponent as QueueSlot;
-    const matchId = `m_${me.uid.slice(0, 4)}_${opp.uid.slice(0, 4)}_${tx.snapshot.key ?? "x"}`;
-    const problem = PROBLEMS[0];
-    const mkPlayer = (uid: string, displayName: string): PlayerState => ({
-      uid,
-      displayName,
-      progress: 0,
-      finished: false,
-    });
-    const match: Match = {
-      id: matchId,
-      problemId: problem.id,
-      status: "active",
-      winner: null,
-      players: {
-        [me.uid]: mkPlayer(me.uid, me.displayName),
-        [opp.uid]: mkPlayer(opp.uid, opp.name),
-      },
-      createdAt: Date.now(),
-    };
+    const match = buildMatch(
+      { uid: me.uid, name: me.displayName },
+      { uid: opp.uid, name: opp.name },
+      "ranked",
+      tx.snapshot.key ?? "x"
+    );
+    const matchId = match.id;
     await set(ref(rtdb, `matches/${matchId}`), match);
     await set(ref(rtdb, `inbox/${opp.uid}`), { matchId }); // notify waiter
     onMatched(matchId);

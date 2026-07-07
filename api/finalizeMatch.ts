@@ -47,6 +47,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const match = tx.snapshot.val();
+
+  // Private matches are unranked: the win is recorded but no Elo changes.
+  // Missing mode is treated as ranked for backward compatibility.
+  const ranked = (match.mode ?? "ranked") === "ranked";
+  if (!ranked) return res.status(200).json({ won: true, ranked: false });
+
   const loserUid = Object.keys(match.players).find((id) => id !== uid)!;
 
   // Update Elo in Firestore atomically.
@@ -61,5 +67,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     t.update(loseRef, { elo: nl });
   });
 
-  return res.status(200).json({ won: true });
+  return res.status(200).json({ won: true, ranked: true });
 }

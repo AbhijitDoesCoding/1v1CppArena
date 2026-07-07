@@ -42,7 +42,13 @@ export default function DuelRoom() {
     if (result.allPassed) {
       try {
         const data = await finalizeMatch(match!.id);
-        setLog(data.won ? "🏆 You won! Elo updated." : "Match already finished.");
+        setLog(
+          data.won
+            ? data.ranked === false
+              ? "🏆 You won! (unranked match)"
+              : "🏆 You won! Elo updated."
+            : "Match already finished."
+        );
       } catch (e: any) {
         setLog("Validation error: " + e.message);
       }
@@ -56,6 +62,11 @@ export default function DuelRoom() {
     return (
       <div className="grid min-h-full place-items-center">
         <div className="w-[380px] rounded-2xl border border-line bg-white p-8 text-center shadow-sm">
+          {match.mode === "private" && (
+            <span className="mb-3 inline-block rounded-full border border-line px-2.5 py-0.5 text-xs text-subtle">
+              Unranked
+            </span>
+          )}
           <h2 className="text-xl font-semibold">{won ? "Victory 🏆" : "Defeat"}</h2>
           <p className="mt-2 text-sm text-subtle">
             {won ? "You solved it first." : "Opponent finished first."}

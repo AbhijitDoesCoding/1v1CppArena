@@ -10,10 +10,25 @@
         ".write": "auth != null"
       }
     },
+    "invites": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "auth != null"
+      }
+    },
+    "privateRooms": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid) || data.child('hostUid').val() === auth.uid || data.child('guestUid').val() === auth.uid || (data.child('status').val() === 'waiting' && !data.child('guestUid').exists() && newData.child('guestUid').val() === auth.uid))",
+        "hostUid": { ".validate": "!data.exists() || data.val() === newData.val()" },
+        "matchId": { ".validate": "!data.exists() || data.val() === newData.val()" },
+        "createdAt": { ".validate": "!data.exists() || data.val() === newData.val()" }
+      }
+    },
     "matches": {
       "$mid": {
         ".read": "auth != null",
-        ".write": "auth != null && data.child('players').child(auth.uid).exists()",
+        ".write": "auth != null && (data.exists() ? data : newData).child('players').child(auth.uid).exists()",
         "players": {
           "$uid": {
             "progress": {
@@ -21,8 +36,9 @@
             }
           }
         },
-        "status": { ".write": false },
-        "winner": { ".write": false }
+        "mode": { ".validate": "!data.exists() || data.val() === newData.val()" },
+        "status": { ".validate": "!data.exists() || data.val() === newData.val()" },
+        "winner": { ".validate": "!data.exists() || data.val() === newData.val()" }
       }
     }
   }
