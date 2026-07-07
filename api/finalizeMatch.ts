@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { initFirebaseAdmin } from "./_admin";
+import { initFirebaseAdmin } from "./_admin.js";
 
 function computeElo(winner: number, loser: number, k = 32): [number, number] {
   const expW = 1 / (1 + 10 ** ((loser - winner) / 400));
